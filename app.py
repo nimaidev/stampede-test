@@ -685,18 +685,24 @@ def generate_live_frames(camera_index=0): # Default to 0 [cite: 84]
         print(f"Attempting to open camera index: {camera_index}") # Log attempt
         live_cap = cv2.VideoCapture(camera_index) # Use the passed index [cite: 88]
         source_desc = f"webcam ({camera_index})"
+        rtmp_url = "rtmp://13.203.184.235/live/stream/test"
+        live_cap = cv2.VideoCapture(rtmp_url)
+        frame, err = live_cap.read()
+        print("Frame :", frame)
+        print("Life cap :", live_cap.isOpened())
+        
         if not live_cap.isOpened():
             # Fallback logic remains similar, but report specific index failure
             print(f"Warning: Cannot open {source_desc}. Trying fallback video...") # [cite: 88]
             fallback_video_path = "videoplayback.mp4" # [cite: 88]
             if os.path.exists(fallback_video_path):
-                 live_cap = cv2.VideoCapture(fallback_video_path) # [cite: 89]
-                 source_desc = f"fallback video ({fallback_video_path})"
-                 if live_cap.isOpened(): print(f"Using {source_desc}")
-                 else: raise IOError(f"Failed to open primary camera ({camera_index}) AND fallback video.") # [cite: 89]
+                live_cap = cv2.VideoCapture(fallback_video_path) # [cite: 89]
+                source_desc = f"fallback video ({fallback_video_path})"
+                if live_cap.isOpened(): print(f"Using {source_desc}")
+                else: raise IOError(f"Failed to open primary camera ({camera_index}) AND fallback video.") # [cite: 89]
             else:
                 raise IOError(f"Failed to open camera index {camera_index} and fallback video not found.") # [cite: 89]
-
+        print(frame)
         frame_width = int(live_cap.get(cv2.CAP_PROP_FRAME_WIDTH)) # [cite: 90]
         frame_height = int(live_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) # [cite: 90]
         if frame_width <= 0 or frame_height <= 0: # [cite: 90]
