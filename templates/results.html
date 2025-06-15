@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Processing Results - Stampede Predictor</title>
+  <link rel="icon" href="{{ url_for('static', filename='StampedeAi_Icon.png') }}" type="image/png"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* --- Replicated Styles (Ideally from a shared CSS) --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap'); /* [cite: 373] */
+
+    :root { /* Define common colors - adapted from live.html & index.html */
+      --primary-dark: #0f172a; /* [cite: 373] */
+      --primary-blue: #3b82f6; /* [cite: 373] */
+      --white: #ffffff; /* [cite: 376] */
+      --text-dark: #1e293b; /* [cite: 375] */
+      --text-muted: #64748b; /* [cite: 159] */
+      --bg-gradient-start: #f7f9fc; /* [cite: 376] */
+      --bg-gradient-end: #dbeafe; /* [cite: 376] */
+      --border-grey: #ccc; /* [cite: 376] */
+      --shadow-light: rgba(0, 0, 0, 0.05); /* Adjusted from [cite: 131] */
+      --shadow-medium: rgba(0, 0, 0, 0.1); /* Adjusted from [cite: 388] */
+
+      /* Status colors (Consider aligning with live.html vars) */
+      --status-critical-bg: #fee2e2; /* [cite: 139] */
+      --status-critical-fg: #b91c1c; /* [cite: 139] */
+      --status-critical-border: #fca5a5; /* [cite: 139] */
+
+      --status-warning-bg: #fef3c7; /* [cite: 138] */
+      --status-warning-fg: #b45309; /* [cite: 138] */
+      --status-warning-border: #fde68a; /* [cite: 138] */
+
+      --status-normal-bg: #ecfdf5; /* [cite: 136] */
+      --status-normal-fg: #047857; /* [cite: 137] */
+      --status-normal-border: #a7f3d0; /* [cite: 137] */
+
+      --error-bg: var(--status-critical-bg);
+      --error-fg: var(--status-critical-fg); /* [cite: 147] */
+      --error-border: var(--status-critical-border);
+    }
+
+    * {
+      box-sizing: border-box; /* [cite: 379] */
+      margin: 0; /* [cite: 379] */
+      padding: 0; /* [cite: 380] */
+    }
+
+    html {
+        scroll-behavior: smooth; /* [cite: 381] */
+        scroll-padding-top: 80px; /* Adjust to match header height */ /* [cite: 382] */
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif; /* [cite: 128, 383] */
+      background: linear-gradient(to right, var(--bg-gradient-start), var(--bg-gradient-end)); /* [cite: 129, 383] */
+      color: var(--text-dark); /* [cite: 129, 375] */
+      margin: 0; /* [cite: 129] */
+      line-height: 1.6; /* [cite: 384] */
+      min-height: 100vh;
+      position: relative;
+      padding-top: 75px; /* Space for fixed header */
+      padding-bottom: 80px; /* Space for footer */
+      overflow-x: hidden; /* [cite: 385] */
+    }
+
+    /* Navbar Styles (from index.html) */
+    nav {
+      background-color: var(--primary-dark); /* [cite: 386] */
+      color: var(--white); /* [cite: 386] */
+      padding: 10px 30px; /* Adjusted padding */
+      display: flex; /* [cite: 387] */
+      justify-content: space-between; /* [cite: 387] */
+      align-items: center; /* [cite: 387] */
+      box-shadow: 0 4px 10px var(--shadow-medium); /* [cite: 388] */
+      position: fixed; /* Changed to fixed */
+      top: 0; /* [cite: 388] */
+      left: 0;
+      right: 0;
+      z-index: 1000; /* [cite: 388] */
+      min-height: 60px; /* [cite: 389] */
+    }
+
+    .logo-container {
+      display: flex; /* [cite: 390] */
+      align-items: center; /* [cite: 391] */
+      gap: 10px; /* [cite: 392] */
+    }
+
+    .logo-container img {
+      height: 45px; /* Adjusted size */ /* Similar to [cite: 394] */
+    }
+
+    nav h2 {
+      margin: 0; /* [cite: 396] */
+      font-size: 1.4rem; /* Adjusted size */ /* Similar to [cite: 397] */
+      font-weight: 600; /* [cite: 397] */
+      color: var(--white); /* [cite: 397] */
+    }
+
+    nav ul {
+      list-style: none; /* [cite: 398] */
+      display: flex; /* [cite: 398] */
+      gap: 25px; /* [cite: 399] */
+      margin: 0; /* [cite: 399] */
+      padding: 0; /* [cite: 400] */
+    }
+
+    nav ul li a {
+      color: var(--white); /* [cite: 401] */
+      text-decoration: none; /* [cite: 401] */
+      font-weight: 500; /* [cite: 401] */
+      position: relative; /* [cite: 402] */
+      padding-bottom: 5px; /* [cite: 402] */
+      transition: color 0.3s; /* [cite: 402] */
+    }
+
+    nav ul li a::after {
+      content: ""; /* [cite: 403] */
+      position: absolute; /* [cite: 403] */
+      width: 0; /* [cite: 403] */
+      height: 3px; /* [cite: 403] */
+      bottom: 0; /* [cite: 404] */
+      left: 0; /* [cite: 404] */
+      background: var(--primary-blue); /* Adjusted color */ /* Similar to [cite: 404] */
+      transition: width 0.3s ease-in-out; /* [cite: 404] */
+      border-radius: 2px; /* [cite: 404] */
+    }
+
+    nav ul li a:hover::after {
+      width: 100%; /* [cite: 405] */
+    }
+
+    nav ul li a:hover {
+      color: var(--primary-blue); /* Adjusted color */ /* Similar to [cite: 406] */
+    }
+
+    /* --- Results Page Specific Styles --- */
+    .results-content {
+      max-width: 900px; /* [cite: 130] */
+      margin: 30px auto; /* Adjusted margin */
+      background: var(--white); /* [cite: 130] */
+      padding: 30px 40px; /* Adjusted padding */ /* [cite: 131] */
+      border-radius: 20px; /* [cite: 131] */
+      box-shadow: 0 10px 25px var(--shadow-light); /* [cite: 131] */
+      backdrop-filter: blur(5px); /* Optional: subtle blur */
+    }
+
+    h1 {
+      text-align: center; /* [cite: 132] */
+      margin: 0 0 25px; /* Adjusted margin */ /* [cite: 132] */
+      font-size: 2.1rem; /* [cite: 133] */
+      color: var(--primary-dark); /* [cite: 134] */
+      font-weight: 700; /* [cite: 419] */
+    }
+
+    h2 {
+      font-size: 1.4rem; /* Adjusted */ /* [cite: 134] */
+      margin-bottom: 8px; /* [cite: 132] */
+      font-weight: 600;
+    }
+
+    .status-container {
+      text-align: center; /* [cite: 135] */
+      padding: 20px; /* [cite: 135] */
+      border-radius: 12px; /* [cite: 135] */
+      font-weight: 600; /* [cite: 135] */
+      margin-bottom: 30px; /* [cite: 136] */
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* [cite: 136] */
+      border: 1px solid transparent;
+    }
+
+    /* Status Color Classes */
+    .status-low {
+      background-color: var(--status-normal-bg); /* [cite: 136] */
+      color: var(--status-normal-fg); /* [cite: 137] */
+      border-color: var(--status-normal-border); /* [cite: 137] */
+    }
+
+    .status-moderate {
+      background-color: var(--status-warning-bg); /* [cite: 138] */
+      color: var(--status-warning-fg); /* [cite: 138] */
+      border-color: var(--status-warning-border); /* [cite: 138] */
+    }
+
+    .status-high {
+      background-color: var(--status-critical-bg); /* [cite: 139] */
+      color: var(--status-critical-fg); /* [cite: 139] */
+      border-color: var(--status-critical-border); /* [cite: 139] */
+    }
+
+    .risk-badge {
+      font-size: 1.2rem; /* Increased size */ /* [cite: 139] */
+      margin-top: 5px; /* [cite: 140] */
+      font-weight: bold; /* [cite: 140] */
+    }
+
+    .media-display h3 { /* Added heading for media section */
+        text-align: center;
+        font-size: 1.3rem;
+        color: var(--primary-dark);
+        margin-bottom: 15px;
+    }
+
+    video, img {
+      display: block; /* [cite: 141] */
+      margin: 10px auto 15px auto; /* Adjusted margin */ /* [cite: 142] */
+      max-width: 100%; /* [cite: 142] */
+      max-height: 65vh; /* Adjusted height */ /* [cite: 142] */
+      border-radius: 12px; /* [cite: 142] */
+      
+      object-fit: contain; /* [cite: 142] */
+      box-shadow: 0 4px 12px var(--shadow-light); /* Added shadow */
+    }
+    
+    video {
+      border: 1px solid var(--border-grey); /* [cite: 142] */
+    }
+
+    .media-caption {
+      text-align:center; /* [cite: 151] */
+      font-size:0.9em; /* [cite: 152] */
+      color: var(--text-muted); /* [cite: 152] */
+      margin-top: -5px;
+      margin-bottom: 25px;
+    }
+
+    .metrics {
+      text-align: center; /* [cite: 140] */
+      margin: 30px 0 20px 0; /* Adjusted margin */
+      padding: 15px;
+      background-color: #f8f9fa; /* Light background for metrics */
+      border-radius: 10px;
+      border: 1px solid #eee;
+    }
+
+    .metrics p {
+      font-size: 1rem; /* Increased size */ /* [cite: 140] */
+      color: var(--text-grey); /* [cite: 141] */
+      margin: 8px 0; /* Adjusted margin */ /* [cite: 141] */
+    }
+
+    .metrics p strong {
+      color: var(--text-dark);
+      font-weight: 600;
+    }
+
+    .download-button {
+      background-color: var(--primary-blue); /* [cite: 143] */
+      color: white; /* [cite: 143] */
+      padding: 12px 24px; /* [cite: 143] */
+      border: none; /* [cite: 143] */
+      border-radius: 10px; /* [cite: 144] */
+      cursor: pointer; /* [cite: 144] */
+      font-size: 1rem; /* [cite: 144] */
+      font-weight: 600;
+      display: block; /* [cite: 144] */
+      width: fit-content; /* Fit button to text */
+      margin: 25px auto; /* [cite: 144] */
+      text-align: center; /* [cite: 144] */
+      text-decoration: none; /* [cite: 144] */
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* [cite: 144, 145] */
+    }
+
+    .download-button:hover {
+      background-color: #2563eb; /* [cite: 145] */
+      transform: translateY(-2px) scale(1.03); /* [cite: 145] */
+      box-shadow: 0 6px 15px var(--shadow-light); /* Added shadow */
+    }
+
+    .error-message {
+      text-align: center; /* [cite: 147] */
+      color: var(--error-fg); /* [cite: 147] */
+      background-color: var(--error-bg);
+      border: 1px solid var(--error-border);
+      font-weight: bold; /* [cite: 147] */
+      margin: 20px auto; /* [cite: 147] */
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+    .error-message p {
+      margin: 5px 0;
+    }
+
+    .error-details {
+      font-size: 0.9em; /* [cite: 154] */
+      font-weight: normal;
+    }
+
+    /* Footer Styles (from index.html) */
+     footer {
+      text-align: center; /* [cite: 470] */
+      padding: 20px; /* [cite: 470] */
+      font-size: 0.9rem; /* [cite: 470] */
+      color: var(--text-muted); /* [cite: 470] */
+      margin-top: 40px; /* [cite: 471] */
+      background-color: #f1f5f9; /* Similar to [cite: 270] */
+      border-top: 1px solid #e2e8f0; /* [cite: 270] */
+      position: absolute; /* [cite: 270] */
+      bottom: 0; /* [cite: 270] */
+      width: 100%; /* [cite: 270] */
+    }
+     footer div {
+        max-width: 700px; /* [cite: 472] */
+        margin: 0 auto; /* [cite: 473] */
+    }
+    footer span {
+        font-weight: 600; /* [cite: 519] */
+    }
+    footer p:last-child {
+        font-size: 0.8em; /* [cite: 519] */
+        color: #888; /* [cite: 519] */
+    }
+
+    /* Hamburger placeholder (if implementing mobile nav toggle) */
+    .hamburger { display: none; } /* [cite: 407] */
+
+    /* Media Queries for Responsiveness */
+    @media (max-width: 768px) {
+        body {
+            padding-top: 65px; /* Adjust if mobile header height changes */
+            padding-bottom: 100px; /* Adjust for footer */
+        }
+        nav {
+            padding: 8px 20px; /* [cite: 475] */
+            min-height: 55px; /* [cite: 476] */
+        }
+        .logo-container img { height: 35px; } /* [cite: 478] */
+        nav h2 { font-size: 1.2rem; } /* [cite: 480] */
+        nav ul { display: none; } /* Hide desktop nav items, implement mobile menu if needed */
+
+        .results-content {
+            padding: 20px; /* [cite: 497] */
+            margin: 20px auto; /* [cite: 498] */
+        }
+        h1 { font-size: 1.8rem; } /* [cite: 499] */
+        h2 { font-size: 1.2rem; }
+        .risk-badge { font-size: 1.1rem; } /* [cite: 139] */
+        .media-display h3 { font-size: 1.1rem; }
+        .metrics p { font-size: 0.9rem; } /* [cite: 140] */
+        .download-button { padding: 10px 20px; font-size: 0.9rem; } /* [cite: 143] */
+        .error-message { max-width: 90%; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <nav>
+     <div class="logo-container">
+        <img src="{{ url_for('static', filename='StampedeAi_Logo.png') }}" alt="Stampede AI Logo"> <h2>Stampede Predictor</h2>
+     </div>
+     <div class="hamburger">
+        <div class="line"></div> <div class="line"></div> <div class="line"></div> </div>
+     <ul>
+       <li><a href="{{ url_for('index_route') }}">Home</a></li> <li><a href="{{ url_for('live_route') }}">Live Feed</a></li> </ul>
+  </nav>
+
+  <div class="results-content">
+    <h1>📊 Media Analysis Result</h1>
+
+    {# Determine and assign density level classes #}
+    {% set status_class = 'status-low' %} {# Default class [cite: 148] #}
+    {% set density_label = 'Low Crowd Density' %} {# Default label [cite: 148] #}
+    {% if prediction_status and ('CRITICAL RISK' in prediction_status or 'Critical Density Cell Detected' in prediction_status) %} {# [cite: 148] #}
+        {% set status_class = 'status-high' %} {# [cite: 148] #}
+        {% set density_label = 'High Crowd Density (⚠️ Critical Risk)' %} {# [cite: 148] #}
+    {% elif prediction_status and 'Warning' in prediction_status %} {# [cite: 148] #}
+        {% set status_class = 'status-moderate' %} {# [cite: 149] #}
+        {% set density_label = 'Moderate Crowd Density (⚠️ Warning)' %} {# [cite: 149] #}
+    {% elif prediction_status and 'Detected' in prediction_status %} {# [cite: 149] #}
+        {% set status_class = 'status-moderate' %} {# [cite: 149] #}
+        {% set density_label = 'Moderate Crowd Density' %} {# [cite: 149] #}
+    {% elif prediction_status and 'Error' in prediction_status %}
+        {% set status_class = 'status-high' %} {# Use high risk color for errors #}
+        {% set density_label = 'Error During Analysis' %} {# Specific label for errors #}
+    {% endif %}
+
+    <div class="status-container {{ status_class }}" id="status-container">
+      <h2>Overall Risk Status:</h2>
+      <div class="risk-badge">{{ density_label }}</div>
+      {# Hidden input to easily access status in JS if needed #}
+      <input type="hidden" id="prediction-status" value="{{ prediction_status | default('Unknown Status') }}"> </div>
+
+    {% if processed_media_url %}
+      <div class="media-display">
+          {% if output_media_type == 'video' %}
+            <h3>🖼️ Most Critical Frame</h3>
+            <img src="{{ processed_media_url }}" alt="Critical Frame from Video Analysis"> <p class="media-caption">(Snapshot based on full video analysis)</p> {% if download_video_url %}
+              <a href="{{ download_video_url }}" download class="download-button">⬇️ Download Full Processed Video</a> {% else %}
+              <div class="error-message">
+                  <p>⚠️ Full processed video could not be generated or is unavailable.</p> </div>
+            {% endif %}
+          {% elif output_media_type == 'image' %}
+            <h3>🖼️ Processed Image</h3>
+            <img src="{{ processed_media_url }}" alt="Processed Image"> {% else %}
+            {# Fallback for unknown type if URL exists #}
+            <h3>🖼️ Processed Media</h3>
+            <img src="{{ processed_media_url }}" alt="Processed Media"> <p class="media-caption">(Displayed as image due to unrecognized type: {{ output_media_type | default('Unknown') }})</p>
+          {% endif %}
+      </div>
+
+      <div class="metrics">
+        <p>👥 Max Persons Detected: <strong>{{ max_persons | default('N/A') }}</strong></p> <p>⏱️ Processing Time: <strong>{{ processing_time | default('N/A') }} seconds</strong></p> </div>
+
+    {% else %}
+      {# Case where processing failed and no media URL generated #}
+      <div class="error-message">
+         <p>⚠️ Media processing failed.</p> {% if prediction_status and 'Error' in prediction_status %}
+             <p class="error-details">Details: {{ prediction_status }}</p> {% else %}
+             <p class="error-details">No processed media could be generated. Please check the input file or server logs.</p>
+         {% endif %}
+      </div>
+       {% if max_persons is defined or processing_time is defined %}
+           <div class="metrics">
+               <p>👥 Max Persons Detected: <strong>{{ max_persons | default('N/A') }}</strong></p>
+               <p>⏱️ Processing Time: <strong>{{ processing_time | default('N/A') }} seconds</strong></p>
+           </div>
+       {% endif %}
+    {% endif %}
+
+    </div> <footer>
+    <div>
+        <p>&copy; 2025 <span>Team Arete</span>. All rights reserved.</p> <p>Stampede Prediction Project</p> </div>
+  </footer>
+
+  <audio id="criticalBeep" src="{{ url_for('static', filename='beep.mp3') }}" preload="auto"></audio> <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const predictionStatusElement = document.getElementById('prediction-status'); // [cite: 155]
+      const audioElement = document.getElementById('criticalBeep'); // [cite: 155]
+
+      if (predictionStatusElement && audioElement) {
+        try {
+            const predictionStatus = predictionStatusElement.value; // [cite: 155]
+            // Play sound for critical or high warning statuses
+            if (predictionStatus.includes('CRITICAL RISK') || predictionStatus.includes('Critical Density Cell Detected') || predictionStatus.includes('Warning')) { // [cite: 156] // Added Warning
+              // Attempt to play audio, handling potential autoplay restrictions
+              audioElement.play().catch(error => { // [cite: 156]
+                console.warn('Autoplay prevented critical beep sound:', error);
+                // Optional: Display a visual cue for the user to enable sound
+              });
+            }
+        } catch (e) {
+            console.error("Error accessing prediction status for audio alert:", e);
+        }
+      } else {
+          if (!predictionStatusElement) console.warn("Prediction status element not found for audio alert.");
+          if (!audioElement) console.warn("Audio element 'criticalBeep' not found.");
+      }
+
+      // Optional: Add mobile navigation toggle JS here if hamburger is implemented
+      // const hamburger = document.querySelector('.hamburger');
+      // const navMenu = document.querySelector('nav ul');
+      // if(hamburger && navMenu) {
+      //   hamburger.addEventListener('click', () => {
+      //     navMenu.classList.toggle('active'); // Requires '.active' CSS for mobile menu display
+      //     document.body.classList.toggle('nav-open'); // Optional: for body styles when menu is open
+      //   });
+      // }
+    });
+  </script>
+
+</body>
+</html>
